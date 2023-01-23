@@ -152,28 +152,18 @@ export class RepositoryController {
   takeModel(
     @Body() takeModelDto: TakeModelDto,
     @Response({ passthrough: true }) res,
-  ): Observable<StreamableFile> {
+  ): Observable<string> {
     return this.repositoryService.takeModel(takeModelDto).pipe(
-      map((model) => {
-        const modelPath = join(
-          process.cwd(),
-          '/repositories/' +
-            takeModelDto.repoId +
-            '/' +
-            model.path +
-            '/' +
-            model.path +
-            '.gltf',
-        );
-        if (!existsSync(modelPath)) {
+      map((model: any) => {
+        const gltfData = JSON.parse(model.gltf);
+        if (!gltfData) {
           throw new HttpException(
             'Модель репозитория не найдена',
             HttpStatus.NOT_FOUND,
           );
         }
-        const modelFile = createReadStream(modelPath);
-        return new StreamableFile(modelFile);
-      }),
+        return gltfData;
+      })
     );
   }
 

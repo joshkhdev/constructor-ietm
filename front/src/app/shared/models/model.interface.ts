@@ -4,4 +4,5 @@ export interface ModelI {
   name: string;
   path: string;
   type: string;
+  gltf: string;
 }

@@ -407,22 +407,30 @@ export class RepositoryService {
                 .compressModelAndSave(straightPath, modelPath)
                 .pipe(
                   switchMap(() => {
-                    repo.models.push({
-                      name: file.originalname.slice(
-                        0,
-                        file.originalname.lastIndexOf('.'),
-                      ),
-                      filename: file.originalname,
-                      path: fileId,
-                      type: type,
-                    });
-                    return from(
-                      this.updateOne({ _id: repo._id, models: repo.models }),
-                    ).pipe(
-                      switchMap(() => {
-                        return this.getOneById(repo._id);
-                      }),
-                    );
+                    return this.modelService
+                      .readJSON(modelPath)
+                      .pipe(
+                        switchMap((gltfData) => {
+                          repo.models.push({
+                            name: file.originalname.slice(
+                              0,
+                              file.originalname.lastIndexOf('.'),
+                            ),
+                            filename: file.originalname,
+                            path: fileId,
+                            type: type,
+                            gltf: JSON.stringify(gltfData),
+                          });
+
+                          return from(
+                            this.updateOne({ _id: repo._id, models: repo.models }),
+                          ).pipe(
+                            switchMap(() => {
+                              return this.getOneById(repo._id);
+                            }),
+                          );
+                        })
+                      );
                   }),
                 );
             }),
@@ -437,22 +445,29 @@ export class RepositoryService {
           )
           .pipe(
             switchMap(() => {
-              repo.models.push({
-                name: file.originalname.slice(
-                  0,
-                  file.originalname.lastIndexOf('.'),
-                ),
-                filename: file.originalname,
-                path: fileId,
-                type: type,
-              });
-              return from(
-                this.updateOne({ _id: repo._id, models: repo.models }),
-              ).pipe(
-                switchMap(() => {
-                  return this.getOneById(repo._id);
-                }),
-              );
+              return this.modelService
+                .readJSON(modelPath)
+                .pipe(
+                  switchMap((gltfData) => {
+                    repo.models.push({
+                      name: file.originalname.slice(
+                        0,
+                        file.originalname.lastIndexOf('.'),
+                      ),
+                      filename: file.originalname,
+                      path: fileId,
+                      type: type,
+                      gltf: JSON.stringify(gltfData),
+                    });
+                    return from(
+                      this.updateOne({ _id: repo._id, models: repo.models }),
+                    ).pipe(
+                      switchMap(() => {
+                        return this.getOneById(repo._id);
+                      }),
+                    );
+                  })
+                );
             }),
           );
     }

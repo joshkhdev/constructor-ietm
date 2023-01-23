@@ -1,4 +1,3 @@
-import { RepositoryType } from './repositoryTypeEnum';
 import { ParticipantI } from './participant.interface';
 import { ModelI } from './model.interface';
 import { UserI } from './user.interface';

@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import * as nrc from 'node-run-cmd';
 import * as fs from 'fs';
-import { from, map, of } from 'rxjs';
+import * as fse from 'fs-extra';
+import { from, Observable, of, switchMap } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
+import { processGltf, glbToGltf } from 'gltf-pipeline';
+import { exec } from 'child_process';
 
 @Injectable()
 export class ModelService {
@@ -21,18 +23,30 @@ export class ModelService {
     compression: number,
   ) {
     return from(
-      nrc.run(
-        [
-          `gltf-converter ${inputPath} ${outputPath} --draco --speed=${
-            10 - compression
-          }`,
-        ],
-        {
-          cwd: this.CONVERTER_PATH,
-        },
-      ),
+      new Promise((resolve, reject) => {
+        exec(
+          `gltf-converter ${inputPath} ${outputPath} --draco --speed=${10 - compression}`,
+          {
+            cwd: this.CONVERTER_PATH,
+          },
+          (err) => {
+            if (!err) {
+              resolve(true);
+            } else {
+              reject(false);
+            }
+          }
+        )
+      }).then((result) => {
+        return result ? true : false;
+      })
     ).pipe(
-      map(() => {
+      switchMap((res) => {
+        if (!res) {
+          return of(false);
+        }
+
+        // Saving original model
         return this.saveModel(inputPath, straightPath);
       }),
     );
@@ -48,43 +62,41 @@ export class ModelService {
   }
 
   compressModelAndSave(originalPath, outputPath: string) {
-    const gltfPipeline = require('gltf-pipeline');
-    const fsExtra = require('fs-extra');
-    const processGltf = gltfPipeline.processGltf;
-    const gltf = fsExtra.readJsonSync(originalPath);
-    const options = {
-      dracoOptions: {
-        compressionLevel: 10,
-      },
-    };
-    gltf.nodes.forEach((node) => {
-      node.extras = { uuid: uuidv4() };
-    });
-    return from(processGltf(gltf, options)).pipe(
-      map((results: any) => {
-        fsExtra.writeJsonSync(outputPath, results.gltf);
-        return true;
-      }),
+    return this.readJSON(originalPath).pipe(
+      switchMap((gltf: any) => {
+        const options = {
+          dracoOptions: {
+            compressionLevel: 10,
+          },
+        };
+        gltf.nodes.forEach((node) => {
+          node.extras = { uuid: uuidv4() };
+        });
+        return from(processGltf(gltf, options)).pipe(
+          switchMap((results: any) => {
+            return this.writeJSON(outputPath, results.gltf);
+          }),
+        );
+      })
     );
   }
 
   transformGLB2GLTFAndSave(originalPath, outputPath) {
-    const gltfPipeline = require('gltf-pipeline');
-    const fsExtra = require('fs-extra');
-    const glbToGltf = gltfPipeline.glbToGltf;
-    const glb = fsExtra.readFileSync(originalPath);
-    const options = {
-      dracoOptions: {
-        compressionLevel: 10,
-      },
-    };
-    return from(glbToGltf(glb, options)).pipe(
-      map((results: any) => {
-        results.gltf.nodes.forEach((node) => {
-          node.extras = { uuid: uuidv4() };
-        });
-        fsExtra.writeJsonSync(outputPath, results.gltf);
-        return true;
+    return this.readFile(originalPath).pipe(
+      switchMap((glb: any) => {
+        const options = {
+          dracoOptions: {
+            compressionLevel: 10,
+          },
+        };
+        return from(glbToGltf(glb, options)).pipe(
+          switchMap((results: any) => {
+            results.gltf.nodes.forEach((node) => {
+              node.extras = { uuid: uuidv4() };
+            });
+            return this.writeJSON(outputPath, results.gltf);
+          }),
+        );
       }),
     );
   }
@@ -107,7 +119,32 @@ export class ModelService {
     );
   }
 
-  writeRepoDirectoryById(repoId: string) {
+  readJSON(path: string) {
+    return from(
+      fse.readJson(path)
+        .then((data) => data)
+        .catch(() => null),
+    );
+  }
+
+  readFile(path: string) { 
+    return from(
+      fs.promises
+        .readFile(path)
+        .then((file) => file)
+        .catch(() => null),
+    );
+  }
+
+  writeJSON(path: string, data: any): Observable<boolean> {
+    return from(
+      fse.writeJson(path, data)
+        .then(() => true)
+        .catch(() => false),
+    )
+  }
+
+  writeRepoDirectoryById(repoId: string): Observable<boolean> {
     return from(
       fs.promises
         .mkdir(join('repositories', repoId.toString()), { recursive: true })
@@ -116,7 +153,7 @@ export class ModelService {
     );
   }
 
-  writeModelDirectoryById(repoId: string, modelId: string) {
+  writeModelDirectoryById(repoId: string, modelId: string): Observable<boolean> {
     return from(
       fs.promises
         .mkdir(join('repositories', repoId.toString(), modelId.toString()), {
@@ -127,7 +164,7 @@ export class ModelService {
     );
   }
 
-  deleteModel(path: string) {
+  deleteModel(path: string): Observable<boolean> {
     return from(
       fs.promises
         .rm(path.toString(), { force: true, recursive: true })
