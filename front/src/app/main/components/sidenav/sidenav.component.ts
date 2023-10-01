@@ -23,7 +23,7 @@ export class SidenavComponent implements OnChanges {
   @Input() selectedAccount: any;
   @Input() userTeams: TeamI[] = [];
   @Input() repositories: RepositoryI[] = [];
-  @Output() selecAccount = new EventEmitter();
+  @Output() accountSelected$ = new EventEmitter();
 
   searchRepositoryValue = '';
 

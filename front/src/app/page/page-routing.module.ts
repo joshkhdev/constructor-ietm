@@ -61,6 +61,10 @@ const routes: Routes = [
           import('../repository/repository.module').then((m) => m.RepositoryModule),
       },
       {
+        path: 'user-page',
+        loadChildren: () => import('../user-page/user-page.module').then((m) => m.UserPageModule),
+      },
+      {
         path: '**',
         redirectTo: 'main',
       },

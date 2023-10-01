@@ -57,7 +57,7 @@
   </ng-template>
 </div>
 <mat-menu class="user-account-menu" #userAccountMenu="matMenu">
-  <button class="user-account-menu__button" mat-menu-item (click)="selecAccount.emit(user)">
+  <button class="user-account-menu__button" mat-menu-item (click)="accountSelected$.emit(user)">
     <img
       class="user-account-menu__image"
       appImageSanitized
@@ -71,7 +71,7 @@
     class="user-account-menu__button"
     mat-menu-item
     *ngFor="let team of userTeams"
-    (click)="selecAccount.emit(team)"
+    (click)="accountSelected$.emit(team)"
   >
     <img
       class="user-account-menu__image"
