@@ -34,9 +34,10 @@ module.exports = {
         '@angular-eslint/no-empty-lifecycle-method': 'warn',
         '@angular-eslint/no-host-metadata-property': 'warn',
         'prettier/prettier': [
-          'error',
+          'warn',
           {
             endOfLine: 'auto',
+            trailingComma: 'all',
           },
         ],
       },
