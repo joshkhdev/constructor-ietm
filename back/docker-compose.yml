@@ -1,0 +1,30 @@
+services:
+  back:
+    image: constructor-ietm
+    container_name: back-pd
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongodb
+    volumes:
+      - back-data:/back/volume
+    networks:
+      team.mpu-cloud:
+
+  mongodb:
+    image: 'bitnami/mongodb:4.0'
+    container_name: mongodb
+    volumes:
+      - mongodb:/mongo/pd
+    networks:
+      team.mpu-cloud:
+
+volumes:
+  back-data:
+  mongodb:
+
+networks:
+  team.mpu-cloud:
