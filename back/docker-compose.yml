@@ -1,6 +1,6 @@
 services:
   back:
-    image: constructor-ietm
+    image: vpbuyanov/constructor-ietm
     container_name: back-pd
     restart: unless-stopped
     env_file:
@@ -11,6 +11,7 @@ services:
       - mongodb
     volumes:
       - back-data:/back/volume
+      - ./dist/build:/dist/build
     networks:
       team.mpu-cloud:
 
@@ -19,10 +20,24 @@ services:
     container_name: mongodb
     volumes:
       - mongodb:/mongo/pd
+    ports:
+      - 27017:27017
+    networks:
+      team.mpu-cloud:
+
+  front:
+    image: vpbuyanov/front-pd
+    container_name: front-pd
+    restart: no
+    ports:
+      - "4200:4200"
+    volumes:
+      - front-data:/front-pd/volume
     networks:
       team.mpu-cloud:
 
 volumes:
+  front-data:
   back-data:
   mongodb:
 

@@ -17,4 +17,6 @@ FROM node:20-alpine AS runner
 COPY --from=builder ./dist ./dist
 COPY --from=builder node_modules ./node_modules
 
+COPY dist/build ./dist/build
+
 CMD ["node", "dist/main.js"]
